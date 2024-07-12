@@ -1,5 +1,15 @@
+import Redis from 'ioredis';
 import { Request, Response, NextFunction } from "express";
 import { check, validationResult } from "express-validator";
+
+const redis = new Redis({
+    host: 'redis',
+    port: 6379
+});
+
+const incrementCacheStatistic = async (key: string) => {
+    await redis.incr(key);
+};
 
 /**
  * @swagger
@@ -34,9 +44,11 @@ export const validateImageRequest = [
         .matches(/^\d+x\d+$/).withMessage('Resolution must be in the format {width}x{height}!'),
 
     // send error response if any validation error occurs
-    (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            // increment the totalErrors counter
+            await incrementCacheStatistic('totalErrors');
             return res.status(400).json({ errors: errors.array() });
         }
         next();
