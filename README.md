@@ -180,8 +180,8 @@ npx jest --coverage
 This command runs all the tests and generates a coverage report. 
 The report will show the percentage of statements, branches, functions, and lines covered by the tests.
 The service is designed to achieve 100% test coverage, ensuring all functionalities are thoroughly tested. 
-It should look similar to this:
-![Coverage report](https://github.com/trutadan/dynamic-image-processing-service/blob/development/coverage.png)
+It should look similar to this:<br>
+  ![Coverage report](https://github.com/trutadan/dynamic-image-processing-service/blob/development/coverage.png)
 
 
 ## Conclusion
