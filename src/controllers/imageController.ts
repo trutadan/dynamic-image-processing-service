@@ -37,6 +37,8 @@ import path from 'path';
  *             schema:
  *               type: string
  *               format: binary
+ *       400:
+ *        description: Validation error
  *       404:
  *         description: Image not found
  *       500:
@@ -101,7 +103,7 @@ export const getImage = async (req: Request, res: Response) => {
             // read the image file
             imageBuffer = readImage(imagePath);
         }
-        
+
         // cache the resized image
         await setCache(cacheKey, imageBuffer.toString('base64'));
         await incrementCacheStatistic('cacheMisses');
