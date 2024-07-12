@@ -1,49 +1,99 @@
-import request from 'supertest';
-import express, { Request, Response } from 'express';
 import { validateImageRequest } from '../src/validators/imageValidator';
+import express, { Request, Response } from 'express';
+import request from 'supertest';
+import Redis from 'ioredis';
 
+// mock Redis client
+jest.mock('ioredis');
+
+// initialize Express app and define the route
 const app = express();
-app.get('/:filename', validateImageRequest, (_: Request, res: Response) => res.send('OK'));
+app.use(express.json());
+app.get('/api/images/:filename', validateImageRequest, (_: Request, res: Response) => res.status(200).send('OK'));
 
-describe('validateImageRequest', () => {
-  it('should return 404 if filename is not provided', async () => {
-    // send a GET request with empty filename
-    const response = await request(app).get('/');
+describe('Image Validator Middleware', () => {
+    beforeEach(() => {
+        // reset all mocks before each test
+        jest.resetAllMocks();
+    });
 
-    // check if the response status code is 404
-    expect(response.status).toBe(404);
-  });
+    it('should pass with valid filename and resolution', async () => {
+        // make a request with a valid filename and resolution
+        const res = await request(app)
+            .get('/api/images/example.jpg')
+            .query({ resolution: '800x600' });
 
-  it('should return 400 if filename has an invalid extension', async () => {
-    // send a GET request with an invalid file extension
-    const response = await request(app).get('/invalid.txt');
+        // expect the request to pass and return a 200 status
+        expect(res.status).toBe(200);
+        expect(res.text).toBe('OK');
+    });
 
-    // check if the response status code is 400
-    expect(response.status).toBe(400);
+    it('should fail with invalid filename extension', async () => {
+        // make a request with an invalid filename extension
+        const res = await request(app)
+            .get('/api/images/example.txt');
 
-    // check if the response body contains the correct error message
-    expect(response.body.errors[0].msg).toBe('Image name must have a valid file extension!');
-  });
+        // expect the request to fail and return a 400 status with a specific error message
+        expect(res.status).toBe(400);
+        expect(res.body.errors).toEqual(expect.arrayContaining([
+            expect.objectContaining({ msg: 'Image name must have a valid file extension!' })
+        ]));
+    });
 
-  it('should return 400 if resolution is not in the correct format', async () => {
-    // send a GET request with the filename test.jpg and resolution 100
-    const response = await request(app).get('/test.jpg?resolution=100');
+    it('should fail with empty filename', async () => {
+        // make a request with an empty filename
+        const res = await request(app)
+            .get('/api/images/');
 
-    // check if the response status code is 400
-    expect(response.status).toBe(400);
+        // expect the request to fail and return a 404 status
+        expect(res.status).toBe(404);
+    });
 
-    // check if the response body contains the correct error message
-    expect(response.body.errors[0].msg).toBe('Resolution must be in the format {width}x{height}!');
-  });
+    it('should fail with missing filename', async () => {
+        // make a request with a missing filename
+        const res = await request(app)
+            .get('/api/images');
 
-  it('should pass validation if correct parameters are provided', async () => {
-    // send a GET request with the filename test.jpg and resolution 100x100
-    const response = await request(app).get('/test.jpg?resolution=100x100');
+        // expect the request to fail and return a 404 status
+        expect(res.status).toBe(404);
+    });
 
-    // check if the response status code is 200
-    expect(response.status).toBe(200);
+    it('should fail with invalid resolution format', async () => {
+        // make a request with an invalid resolution format
+        const res = await request(app)
+            .get('/api/images/sample.jpg')
+            .query({ resolution: '800x' });
 
-    // check if the response body is 'OK'
-    expect(response.text).toBe('OK');
-  });
+        // expect the request to fail and return a 400 status with specific error message
+        expect(res.status).toBe(400);
+        expect(res.body.errors).toEqual(expect.arrayContaining([
+            expect.objectContaining({ msg: 'Resolution must be in the format {width}x{height}!' })
+        ]));
+    });
+
+    it('should fail with non-string resolution', async () => {
+        // make a request with a non-string resolution
+        const res = await request(app)
+            .get('/api/images/sample.jpg')
+            .query({ resolution: 800 });
+
+        // expect the request to fail and return a 400 status with specific error message
+        expect(res.status).toBe(400);
+        expect(res.body.errors).toEqual(expect.arrayContaining([
+            expect.objectContaining({ msg: 'Resolution must be in the format {width}x{height}!' })
+        ]));
+    });
+
+    it('should handle Redis errors', async () => {
+        // mock Redis error
+        (Redis.prototype.incr as jest.Mock).mockRejectedValue(new Error('Redis error'));
+
+        // make a request with a valid filename and resolution
+        const res = await request(app)
+            .get('/api/images/sample.jpg')
+            .query({ resolution: '800x600' });
+
+        // expect the request to pass and return a 200 status despite Redis error
+        expect(res.status).toBe(200);
+    });
 });
