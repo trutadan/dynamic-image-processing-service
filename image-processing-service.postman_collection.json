@@ -1,0 +1,57 @@
+{
+	"info": {
+		"_postman_id": "17302dc5-1479-4417-8057-2e73cfff1290",
+		"name": "image-processing-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26123842"
+	},
+	"item": [
+		{
+			"name": "image",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/images/node.png?resolution=435x440",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"images",
+						"node.png"
+					],
+					"query": [
+						{
+							"key": "resolution",
+							"value": "435x440"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "statistics",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/statistics",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"statistics"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
